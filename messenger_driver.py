@@ -14,8 +14,6 @@ class MessengerDriver():
         # Open Firefox and establish connection with messenger.com
         self._driver.get(MESSENGER_URL)
 
-        self._wait = WebDriverWait(self._driver, 1000)
-
         try:
             # Load cookies from the file MessengerCookies.pkl 
             # (in order not to login once again)
@@ -29,16 +27,17 @@ class MessengerDriver():
             # Never logged in 
 
             # if login information specified
+            wait = WebDriverWait(self._driver, 10)
             if user and pwd:
-                self._wait.until(EC.visibility_of_element_located(
+                wait.until(EC.visibility_of_element_located(
                     (By.ID, "email"))).send_keys(user)
-                self._wait.until(EC.visibility_of_element_located(
+                wait.until(EC.visibility_of_element_located(
                     (By.ID, "pass"))).send_keys(pwd)
-                self._wait.until(EC.visibility_of_element_located(
+                wait.until(EC.visibility_of_element_located(
                     (By.ID, "loginbutton"))).click()
             # else user have to login manually
             else:
-                WebDriverWait(self._driver, 1000).until(
+                wait.until(
                     EC.visibility_of_element_located((By.XPATH,
                         "//ul[@aria-label='Conversation List']")))
             
@@ -62,7 +61,7 @@ class MessengerDriver():
         
         self._driver.get(url)
 
-        textbox = self._wait.until(
+        textbox = WebDriverWait(self._driver, 30).until(
             EC.visibility_of_element_located((By.XPATH, 
             "//div[contains(@class, '_5rpu') and @role='combobox']")))
 
@@ -75,7 +74,7 @@ class MessengerDriver():
          - String - the url of the first unread conversation
 
         """
-        new = WebDriverWait(self._driver, 1000).until(
+        new = WebDriverWait(self._driver, 100000).until(
             EC.visibility_of_element_located((By.XPATH,
                 "//ul[@aria-label='Conversation List']" +
                 "/li[@aria-live='polite']" +
@@ -87,5 +86,6 @@ class MessengerDriver():
         """
         try:
             self._driver.close()
-        except:
+        except Exception as e:
+            print(e)
             pass

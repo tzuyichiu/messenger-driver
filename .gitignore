@@ -1,3 +1,4 @@
 *.pkl
 *.log
 __pycache__/*
+*.pyc

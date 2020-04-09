@@ -4,14 +4,21 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pickle
+import time
 
 MESSENGER_URL = 'https://www.messenger.com'
 
 class MessengerDriver():
-    def __init__(self, user=None, pwd=None):
-        self._driver = webdriver.Firefox()
+    def __init__(self, browser, user=None, pwd=None):
         
-        # Open Firefox and establish connection with messenger.com
+        if browser == 'firefox' or browser == 'Firefox':
+            self._driver = webdriver.Firefox()
+        elif browser == 'chrome' or browser == 'Chrome':
+            self._driver = webdriver.Chrome()
+        else:
+            raise ValueError('Invalid browser: has to be Firefox or Chrome')
+        
+        # Open Firefox or Chrome and establish connection with messenger.com
         self._driver.get(MESSENGER_URL)
 
         try:
@@ -23,49 +30,62 @@ class MessengerDriver():
             # Reload the page with the loaded cookies
             self._driver.get(MESSENGER_URL)
         
-        except FileNotFoundError:
-            # Never logged in 
-
-            # if login information specified
-            wait = WebDriverWait(self._driver, 10)
-            if user and pwd:
-                wait.until(EC.visibility_of_element_located(
-                    (By.ID, "email"))).send_keys(user)
-                wait.until(EC.visibility_of_element_located(
-                    (By.ID, "pass"))).send_keys(pwd)
-                wait.until(EC.visibility_of_element_located(
-                    (By.ID, "loginbutton"))).click()
-            # else user have to login manually
-            else:
-                wait.until(
-                    EC.visibility_of_element_located((By.XPATH,
-                        "//ul[@aria-label='Conversation List']")))
-            
-            # dump cookies to file once logged in manually
-            pickle.dump(self._driver.get_cookies(), 
-                open("MessengerCookies.pkl", "wb"))
+        # Never logged in
+        except EnvironmentError as e:
+            # FileNotFoundError in Python3 and IOError or OSError in Python2
+            if e.errno == errno.ENOENT:
+                # if login information specified
+                wait = WebDriverWait(self._driver, 10)
+                if user and pwd:
+                    wait.until(EC.visibility_of_element_located(
+                        (By.ID, "email"))).send_keys(user)
+                    wait.until(EC.visibility_of_element_located(
+                        (By.ID, "pass"))).send_keys(pwd)
+                    wait.until(EC.visibility_of_element_located(
+                        (By.ID, "loginbutton"))).click()
+                # else user have to login manually
+                else:
+                    wait.until(
+                        EC.visibility_of_element_located((By.XPATH,
+                            "//ul[@aria-label='Conversation List']")))
+                
+                # dump cookies to file once logged in manually
+                pickle.dump(self._driver.get_cookies(), 
+                    open("MessengerCookies.pkl", "wb"))
     
-    def send(self, text, url):
-        """send a text in a conversation
+    def sendto(self, url):
+        """get inside a conversation
 
         :Args:
-         - text - the text to send
          - url - the url corresponding to the conversation
 
         :Raises:
          - ValueError - not a valid Messenger url
 
         """
+
         if not url.startswith(MESSENGER_URL+'/t/'):
             raise ValueError('not a valid conversation url')
         
         self._driver.get(url)
+    
+    def send(self, text, nb=1, interval=0.5):
+        """send a text
 
+        :Args:
+         - text     - the text to send
+         - nb       - if multiple sending
+         - interval - time interval between multiple messages
+
+        """
+        
         textbox = WebDriverWait(self._driver, 30).until(
             EC.visibility_of_element_located((By.XPATH, 
             "//div[contains(@class, '_5rpu') and @role='combobox']")))
 
-        textbox.send_keys(text + Keys.ENTER)
+        for _ in range(nb):
+            textbox.send_keys(text + Keys.ENTER)
+            time.sleep(interval)
 
     def detect_new(self):
         """detect unread message (bold conversations)
@@ -82,7 +102,7 @@ class MessengerDriver():
         return new.get_attribute("data-href")
 
     def close(self):
-        """close the browser (Firefox)
+        """close the browser
         """
         try:
             self._driver.close()

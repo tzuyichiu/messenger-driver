@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pickle
 import time
+import errno
 
 MESSENGER_URL = 'https://www.messenger.com'
 
@@ -35,7 +36,7 @@ class MessengerDriver():
             # FileNotFoundError in Python3 and IOError or OSError in Python2
             if e.errno == errno.ENOENT:
                 # if login information specified
-                wait = WebDriverWait(self._driver, 10)
+                wait = WebDriverWait(self._driver, 30)
                 if user and pwd:
                     wait.until(EC.visibility_of_element_located(
                         (By.ID, "email"))).send_keys(user)

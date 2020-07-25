@@ -51,4 +51,4 @@ def flood(browser, url, text, nb, interval=0.5):
 
 if __name__ == "__main__":
     browser = parse(sys.argv[1:])
-    flood(browser, 'https://www.messenger.com/t/12345678', 'Hello', 5) # example
+    autoreply(browser, 'hello')

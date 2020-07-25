@@ -2,3 +2,5 @@
 *.log
 __pycache__/*
 *.pyc
+Pipfile
+Pipfile.lock
